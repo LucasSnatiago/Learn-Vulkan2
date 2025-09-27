@@ -11,6 +11,17 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
+// Debug stuff
+const std::vector<const char*> validationLayer = {
+    "VK_LAYER_KHRONOS_validation"
+};
+
+#ifdef NDEBUG
+    const bool enableValidationLayers = false;
+#else
+    const bool enableValidationLayers = true;
+#endif
+
 class HelloTriangleApplication {
 public:
     void run(){
@@ -44,6 +55,7 @@ private:
     }
 
     void cleanup() {
+        vkDestroyInstance(this->instance, nullptr);
         glfwDestroyWindow(this->window);
         glfwTerminate();
     }
@@ -67,16 +79,18 @@ private:
             fmt::print("\t{}\n", extension.extensionName);
         }
 
+        if (enableValidationLayers && !checkValidationLayersSupport()) {
+            throw std::runtime_error("validation layers requested, but not available!");
+        }
+
+        if (!isGlfwSupported()) {
+            throw std::runtime_error("Some Vulkan necessary extensions are missing on this machine\n");
+        }
+
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
 
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        if (isGlfwSupported()) {
-            fmt::print("All Vulkan necessary extensions are supported on this machine\n");
-        } else {
-            fmt::print("Some Vulkan necessary extensions are missing on this machine\n");
-        }
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
@@ -88,7 +102,31 @@ private:
         }
     }
 
-    // TODO
+    bool checkValidationLayersSupport() {
+        uint32_t layerCount;
+        vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+        std::vector<VkLayerProperties> availableLayers(layerCount);
+        vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+        for (const char* layerName : validationLayer) {
+            bool layerFound = false;
+
+            for (const auto& layerProperties : availableLayers) {
+                if (std::strcmp(layerName, layerProperties.layerName) == 0) {
+                    layerFound = true;
+                    break;
+                }
+            }
+
+            if (!layerFound)
+                return false;
+        }
+
+        return true;
+    }
+
+    // Check if all necessary GLFW vulkan extensions are available on the host machine
     bool isGlfwSupported() {
         // All GLFW extensions needed
         uint32_t glfwExtensionCount = 0;
@@ -99,9 +137,21 @@ private:
         auto localExtensions = supportedVulkanExtensions();
 
         // Search if all glfw extensions are available
-        bool find = true;
+        for (int i = 0; i < glfwExtensionCount; i++) {
+            bool found = false;
 
-        return find;
+            for (const auto& localExt : localExtensions) {
+                if (std::strcmp(glfwExtensions[i], localExt.extensionName) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found)
+                return false;
+        }
+
+        return true;
     }
 
     std::vector<VkExtensionProperties> supportedVulkanExtensions() {
