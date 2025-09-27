@@ -1,4 +1,4 @@
-# Learn Vulkan2
+# Learn Vulkan2 [![Linux Build](https://github.com/LucasSnatiago/Learn-Vulkan2/actions/workflows/linux-build.yml/badge.svg)](https://github.com/LucasSnatiago/Learn-Vulkan2/actions/workflows/linux-build.yml)
 
 Using https://vulkan-tutorial.com to learn vulkan. Second Try :)
 
