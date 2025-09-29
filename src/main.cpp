@@ -265,16 +265,23 @@ private:
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(this->instance, &deviceCount, devices.data());
 
-        // Display available devices and their features
-        for (const auto& device: devices)
-            displayDeviceFeatures(device);
-
         // Find the first suitable device
+        bool isGpuSelected = false;
         for (const auto& device : devices) {
-            if (isDeviceSuitable(device)) {
+            if (isDeviceSuitable(device) && !isGpuSelected) {
                 this->physicalDevice = device;
-                break;
+                isGpuSelected = true;
+                fmt::print(fmt::fg(fmt::color::green), "Selected GPU: \n");
+
+            } else if (isDeviceSuitable(device) && isGpuSelected) {
+                fmt::print(fmt::fg(fmt::color::yellow), "Found another suitable GPU: \n");
+
+            } else {
+                fmt::print(fmt::fg(fmt::color::red), "Found an unsuitable GPU: \n");
+
             }
+
+            displayDeviceFeatures(device);
         }
 
         if (this->physicalDevice == VK_NULL_HANDLE)
