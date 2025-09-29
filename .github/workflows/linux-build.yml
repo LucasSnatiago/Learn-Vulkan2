@@ -14,11 +14,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
-      run: sudo apt update && \
-           sudo apt install -y vulkan-validationlayers spirv-tools vulkan-tools libvulkan-dev \
-              libxi-dev libxxf86vm-dev libglm-dev glslc glslang-dev glslang-tools unzip cmake \
-              ninja-build pkg-config libwayland-dev wayland-protocols extra-cmake-modules \
-              libxkbcommon-dev xorg-dev
+      run: |
+        sudo apt update
+        sudo apt install -y vulkan-validationlayers spirv-tools vulkan-tools libvulkan-dev \
+            libxi-dev libxxf86vm-dev libglm-dev glslc glslang-dev glslang-tools unzip cmake \
+            ninja-build pkg-config libwayland-dev wayland-protocols extra-cmake-modules \
+            libxkbcommon-dev xorg-dev
     - name: Install external dependencies
       run: ./scripts/dependencies.sh
     - name: Compilation stage
