@@ -14,6 +14,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install dependencies
-      run: sudo apt update && sudo apt install -y vulkan-validationlayers spirv-tools vulkan-tools libvulkan-dev libxi-dev libxxf86vm-dev libglfw3-dev libglm-dev glslc glslang-dev glslang-tools libfmt-dev
-    - name: make
+      run: sudo apt update && sudo apt install -y vulkan-validationlayers spirv-tools vulkan-tools libvulkan-dev libxi-dev libxxf86vm-dev libglm-dev glslc glslang-dev glslang-tools unzip
+    - name: Install external dependencies
+      run: ./scripts/dependencies.sh
+    - name: Compilation stage
       run: make
