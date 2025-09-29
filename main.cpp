@@ -86,7 +86,7 @@ private:
 
     void cleanup() {
         if (enableValidationLayers)
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+           DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 
         vkDestroyInstance(this->instance, nullptr);
         glfwDestroyWindow(this->window);
@@ -102,61 +102,60 @@ private:
         appInfo.engineVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
+        if (enableValidationLayers && !checkValidationLayersSupport())
+            throw std::runtime_error("validation layers requested, but not available!");
+
+        if (!isGlfwSupported())
+            throw std::runtime_error("Some Vulkan necessary extensions are missing on this machine");
+
+        auto requiredExtensions = getRequiredExtensions();
+
         VkInstanceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
-        auto requiredExtensions = getRequiredExtensions();
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+        createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayer.size());
             createInfo.ppEnabledLayerNames = validationLayer.data();
-            createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
-            createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+            populateDebugMessengerCreateInfo(debugCreateInfo);
+            createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
+            createInfo.pNext = nullptr;
         }
 
-        std::vector<VkExtensionProperties> extensions = supportedVulkanExtensions();
+        // (Opcional) listar extensões suportadas, apenas para log
+        auto extensions = supportedVulkanExtensions();
         fmt::print("Available extensions:\n");
-        for (const auto& extension : extensions) {
-            fmt::print("\t{}\n", extension.extensionName);
-        }
+        for (const auto& e : extensions)
+            fmt::print("\t{}\n", e.extensionName);
 
-        if (enableValidationLayers && !checkValidationLayersSupport()) {
-            throw std::runtime_error("validation layers requested, but not available!");
-        }
-
-        if (!isGlfwSupported()) {
-            throw std::runtime_error("Some Vulkan necessary extensions are missing on this machine\n");
-        }
-
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        createInfo.enabledExtensionCount = glfwExtensionCount;
-        createInfo.ppEnabledExtensionNames = glfwExtensions;
-
-        createInfo.enabledLayerCount = 0;
-
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
+        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
             throw std::runtime_error("Failed to create instance!");
-        }
+}
+
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+        createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = debugCallback;
     }
 
     void setupDebugMessenger() {
         if (!enableValidationLayers) return;
 
-        VkDebugUtilsMessengerCreateInfoEXT createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                                     VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                                 VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debugCallback;
-        createInfo.pUserData = nullptr;
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        populateDebugMessengerCreateInfo(createInfo);
 
         if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
             throw std::runtime_error("failed to setup debug messenger!");
