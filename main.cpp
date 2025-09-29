@@ -63,6 +63,7 @@ private:
     GLFWwindow* window;
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
     void initWindow() {
         glfwInit();
@@ -76,6 +77,7 @@ private:
     void initVulkan() {
         createInstance();
         setupDebugMessenger();
+        pickPhysicalDevice();
     }
 
     void mainLoop() {
@@ -248,6 +250,49 @@ private:
         }
 
         return VK_FALSE;
+    }
+
+    void pickPhysicalDevice() {
+        uint32_t deviceCount = 0;
+        vkEnumeratePhysicalDevices(this->instance, &deviceCount, nullptr);
+
+        if (deviceCount == 0)
+            throw std::runtime_error("failed to find GPUs with Vulkan support!");
+
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(this->instance, &deviceCount, devices.data());
+
+        for (const auto& device : devices) {
+            if (isDeviceSuitable(device)) {
+                this->physicalDevice = device;
+                break;
+            }
+        }
+
+        if (this->physicalDevice == VK_NULL_HANDLE)
+            throw std::runtime_error("failed to find a suitable GPU!");
+    }
+
+    bool isDeviceSuitable(VkPhysicalDevice device) {
+        VkPhysicalDeviceProperties deviceProperties;
+        VkPhysicalDeviceFeatures deviceFeatures;
+        vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        fmt::print("Device Name: {}\n", deviceProperties.deviceName);
+        fmt::print("API Version: {}.{}.{}\n",
+            VK_API_VERSION_MAJOR(deviceProperties.apiVersion),
+            VK_API_VERSION_MINOR(deviceProperties.apiVersion),
+            VK_API_VERSION_PATCH(deviceProperties.apiVersion)
+        );
+        fmt::print("Driver Version: {}\n", deviceProperties.driverVersion);
+        fmt::print("Vendor ID: {}\n", deviceProperties.vendorID);
+        fmt::print("Device ID: {}\n", deviceProperties.deviceID);
+
+        // Only Geometry Shaders are important now, integrated GPUs are ok for now
+        // return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && \
+                                              deviceFeatures.geometryShader;
+        return deviceFeatures.geometryShader;
     }
 };
 
