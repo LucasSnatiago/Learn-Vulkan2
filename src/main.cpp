@@ -10,6 +10,9 @@
 #include <vector>
 #include <unordered_set>
 
+// Local includes
+#include <queues.hpp>
+
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
@@ -262,6 +265,11 @@ private:
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(this->instance, &deviceCount, devices.data());
 
+        // Display available devices and their features
+        for (const auto& device: devices)
+            displayDeviceFeatures(device);
+
+        // Find the first suitable device
         for (const auto& device : devices) {
             if (isDeviceSuitable(device)) {
                 this->physicalDevice = device;
@@ -274,6 +282,12 @@ private:
     }
 
     bool isDeviceSuitable(VkPhysicalDevice device) {
+        QueueFamilyIndices indices = findQueueFamilies(device);
+
+        return indices.isComplete();
+    }
+
+    void displayDeviceFeatures(VkPhysicalDevice device) {
         VkPhysicalDeviceProperties deviceProperties;
         VkPhysicalDeviceFeatures deviceFeatures;
         vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -289,10 +303,9 @@ private:
         fmt::print("Vendor ID: {}\n", deviceProperties.vendorID);
         fmt::print("Device ID: {}\n", deviceProperties.deviceID);
 
-        // Only Geometry Shaders are important now, integrated GPUs are ok for now
-        // return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && \
-                                              deviceFeatures.geometryShader;
-        return deviceFeatures.geometryShader;
+        fmt::print("Geometry Shader: {}\n", deviceFeatures.geometryShader ? "Supported" : "Not Supported");
+        fmt::print("Tessellation Shader: {}\n", deviceFeatures.tessellationShader ? "Supported" : "Not Supported");
+        fmt::print("Wide Lines: {}\n", deviceFeatures.wideLines ? "Supported" : "Not Supported");
     }
 };
 
