@@ -14,6 +14,7 @@
 // Local includes
 #include <queues.hpp>
 #include <swapchain.hpp>
+#include <shaders.hpp>
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -108,6 +109,7 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
+        createGraphicsPipeline();
     }
 
     void mainLoop() {
@@ -505,6 +507,11 @@ private:
             if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS)
                 throw std::runtime_error("failed to create image views!");
         }
+    }
+
+    void createGraphicsPipeline() {
+        auto vertShaderCode = readFile("shaders/vert.spv");
+        auto fragShaderCode = readFile("shaders/frag.spv");
     }
 };
 

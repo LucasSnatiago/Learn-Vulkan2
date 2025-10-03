@@ -41,3 +41,6 @@
 *.dwo
 VulkanTest
 .vscode/
+
+# Vulkan spirv code
+*.spv
