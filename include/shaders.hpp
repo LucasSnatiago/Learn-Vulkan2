@@ -1,5 +1,8 @@
 #pragma once
 
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
 #include <vector>
 #include <string>
 #include <fstream>
@@ -22,3 +25,5 @@ static std::vector<char> readFile(const std::string& filename) {
 
     return buffer;
 }
+
+VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice& logicalDevice);
